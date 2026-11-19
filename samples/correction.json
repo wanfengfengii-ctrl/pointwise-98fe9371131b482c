@@ -1,0 +1,11 @@
+{
+  "station": "north",
+  "revision": "late reference correction",
+  "exact": [
+    {"id": "reference transfer", "terms": {"Z": 1, "A": -1}, "target": 0},
+    {"id": "fixture step", "terms": {"B": 1, "Z": -1}, "target": "3/2"}
+  ],
+  "ordinary": [
+    {"id": "north gauge", "terms": {"B": 1}, "target": 2, "weight": 1}
+  ]
+}

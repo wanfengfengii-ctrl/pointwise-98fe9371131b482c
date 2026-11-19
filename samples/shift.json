@@ -1,0 +1,33 @@
+{
+  "ticket": "fixture-line-07",
+  "unit": "mm",
+  "stations": [
+    {
+      "name": "north",
+      "revision": "morning readings",
+      "terminals": ["A", "B"],
+      "exact": [
+        {"id": "reference transfer", "terms": {"Z": 1, "A": -1}, "target": 0},
+        {"id": "fixture step", "terms": {"B": 1, "Z": -1}, "target": 1}
+      ],
+      "ordinary": [
+        {"id": "north gauge", "terms": {"B": 1}, "target": 2, "weight": 1}
+      ]
+    },
+    {
+      "name": "south",
+      "revision": "morning readings",
+      "terminals": ["A", "B"],
+      "exact": [],
+      "ordinary": [
+        {"id": "south gauge", "terms": {"A": 0, "B": 1}, "target": 3, "weight": 1}
+      ]
+    }
+  ],
+  "comparison": {
+    "name": "midday seam check",
+    "bindings": [["A", "A"], ["B", "B"]],
+    "references": [[["north", "A"], 0]],
+    "contrasts": [[["north", "B"], ["north", "A"]]]
+  }
+}
