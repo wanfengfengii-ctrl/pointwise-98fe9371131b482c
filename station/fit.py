@@ -64,14 +64,23 @@ def exact_equations(revision, points):
 
 
 def observation_cost(revision, points):
+    return observation_cost_from_rows(revision.observations, points)
+
+
+def observation_cost_from_rows(rows, points):
     width = len(points) + 1
     gram = [[Fraction(0) for _ in range(width)] for _ in range(width)]
-    for row in revision.observations:
+    for row in rows:
         coefficients = (*row_coordinates(row, points), -row.target)
         for i, left in enumerate(coefficients):
             for j, right in enumerate(coefficients):
                 gram[i][j] += row.weight * left * right
     return Quadratic(tuple(tuple(row) for row in gram))
+
+
+def zero_quadratic(dimension):
+    return Quadratic(tuple(tuple(Fraction(0) for _ in range(dimension + 1))
+                           for _ in range(dimension + 1)))
 
 
 def minimum_on_space(cost, space):

@@ -40,6 +40,9 @@ def initialize_ledger_schema(db):
             payload BLOB NOT NULL
         );
     ''')
+    columns = {row[1] for row in db.execute('PRAGMA table_info(revisions)')}
+    if 'control_ids' not in columns:
+        db.execute('ALTER TABLE revisions ADD COLUMN control_ids TEXT')
 
 
 def _read_registration(db, row):
@@ -74,13 +77,14 @@ def fetch_trial_registration(db, trial_id):
     return _read_registration(db, row)
 
 
-def insert_revision_batch(db, revision_id, trial_id, station, name, parent_id, evidence):
+def insert_revision_batch(db, revision_id, trial_id, station, name, parent_id, evidence,
+                          control_text=None):
     with db:
         inserted = db.execute('''
-            INSERT INTO revisions (id, trial_id, station, name, parent_id, evidence)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO revisions (id, trial_id, station, name, parent_id, evidence, control_ids)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(trial_id, station, name) DO NOTHING
-        ''', (revision_id, trial_id, station, name, parent_id, evidence)).rowcount
+        ''', (revision_id, trial_id, station, name, parent_id, evidence, control_text)).rowcount
         if not inserted:
             raise ValueError('revision name already exists for this station and trial')
 
@@ -88,7 +92,7 @@ def insert_revision_batch(db, revision_id, trial_id, station, name, parent_id, e
 def fetch_revision_batch(db, revision_id):
     return db.execute('''
         SELECT revisions.id, revisions.trial_id, revisions.station, trials.unit,
-               revisions.name, revisions.parent_id, revisions.evidence
+               revisions.name, revisions.parent_id, revisions.evidence, revisions.control_ids
         FROM revisions JOIN trials ON trials.id = revisions.trial_id
         WHERE revisions.id = ?
     ''', (revision_id,)).fetchone()

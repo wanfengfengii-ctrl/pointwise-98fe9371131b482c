@@ -35,6 +35,16 @@
 | `review.reconcile.sign_comparison` | `sign_comparison(db, request_id)` 返回 `ComparisonResult`，含 `residuals`、`contrasts` 及 `issued`。每次成功调用签发一个固定报告。 |
 | `records.retrieve.get_comparison` | `get_comparison(db, report_id)` 返回 `IssuedReport`，含报告号、原载荷字节、原父件关系和原回执。找不到该号时返回 `None`。 |
 
+### 分级（版本 2）扩展
+
+分级复核在 V1 接口之外新增控制组与两级残差账，V1 的修订、站件、报告、旧库和全部原回归保持可用。
+
+- `record_revision(..., control_ids=None)`：`None` 或省略登记 V1 修订；显式传普通观测行号的列表/元组登记分级修订，行号须属于本次普通观测且不重复，其余行归生产组；空序列表示控制组为空。`load_revision` 的 `control_ids` 属性对 V1 为 `None`，对分级修订为按普通观测原序排列的行号元组。
+- `station.publish.freeze_tiered_station(db, revision_id, terminals)`：只接纳显式分级修订，沿用原端子校验和顺序，返回版本 `2` 的固定站件；`freeze_station` 遇到分级修订、`freeze_tiered_station` 遇到 V1 修订均报 `ValueError`。分级件携带公开硬等式、控制/生产两套半正定残差矩阵和保留的自由私有变量数，私有点名与原观测行留站。`encode_station_artifact`、`decode_station_artifact`、`load_station_artifact` 同时支持两个版本，解码核对版本、内容标识、规范编码、站点来源、端子、有理值和硬条件可行性。
+- `prepare_comparison` 参数不变；两件须同版本，版本混用在准备时整次拒绝。
+- `sign_comparison` 对版本 2 任务先最小化两站控制残差之和，再在全部共同控制最优解中最小化生产残差之和，两级共用同一组接缝值与站内可实现私有状态。`result.residuals.stations` 按入件顺序给出 `(站名, 控制残差, 生产残差)`，并提供 `control_total`、`production_total`；空组残差为零。报告 JSON 的 `version` 为 `2`，含 `station_residuals[*].control_residual/production_residual` 与 `total_residuals.control/production`，差值确认口径与 V1 一致。
+- 共同不可行仍抛 `JointInfeasibleError`；定稿、原任务与两份父件的关联和回执同次提交，失败可按原任务重试；`get_comparison` 按原报告号领取定稿字节、父件关联和回执，与源账是否更正或复核库是否重开无关。
+
 未知试验、修订、站件和任务号使用 `KeyError`。非法单位、证据、站件和引用使用 `ValueError`。共同不可行抛出 `JointInfeasibleError`，数据库写入或提交出错时传播 SQLite 错误。被拒绝的修订、冻结、准备或签发不留下该次新增结果。报告与回执在提交成功后一起返回。
 
 ## 核验和演示

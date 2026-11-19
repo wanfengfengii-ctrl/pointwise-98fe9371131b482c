@@ -31,3 +31,31 @@ def build_report(request: ComparisonRequest, residuals: ResidualLedger,
     }
     return ReportDraft(request.request_id, request.pair.artifact_ids,
                        json.dumps(payload, sort_keys=True, separators=(',', ':')).encode('ascii'))
+
+
+def _contrast_wire(contrasts):
+    return [{'left': contrast.left, 'right': contrast.right, 'status': contrast.status,
+             'value': None if contrast.value is None else str(contrast.value)}
+            for contrast in contrasts]
+
+
+def build_tiered_report(request: ComparisonRequest, residuals,
+                        contrasts: tuple[ContrastResult, ...]):
+    payload = {
+        'version': 2,
+        'request_id': request.request_id,
+        'name': request.name,
+        'trial_id': request.pair.first.trial_id,
+        'unit': request.pair.first.unit,
+        'artifact_ids': request.pair.artifact_ids,
+        'station_residuals': [
+            {'station': station, 'control_residual': str(control),
+             'production_residual': str(production)}
+            for station, control, production in residuals.stations
+        ],
+        'total_residuals': {'control': str(residuals.control_total),
+                            'production': str(residuals.production_total)},
+        'contrasts': _contrast_wire(contrasts),
+    }
+    return ReportDraft(request.request_id, request.pair.artifact_ids,
+                       json.dumps(payload, sort_keys=True, separators=(',', ':')).encode('ascii'))
